@@ -590,6 +590,11 @@ macro_rules! jni_bridge_handle {
                 let slice_of_pointers = unsafe {
                     std::slice::from_raw_parts(stored.as_ptr() as *const *const $typ, len)
                 };
+                log::info!(
+                    "{} pointers: {:?}",
+                    std::any::type_name::<$typ>(),
+                    slice_of_pointers
+                );
                 if slice_of_pointers.contains(&std::ptr::null()) {
                     return Err(jni::SignalJniError::NullHandle);
                 }
