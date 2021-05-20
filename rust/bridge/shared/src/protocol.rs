@@ -982,7 +982,7 @@ async fn SealedSessionCipher_Encrypt<E: Env>(
     Ok(env.buffer(ctext))
 }
 
-#[bridge_fn_buffer(jni = "SealedSessionCipher_1MultiRecipientEncrypt")]
+#[bridge_fn_buffer(jni = "x")]
 async fn SealedSender_MultiRecipientEncrypt<E: Env>(
     env: E,
     recipients: &[&ProtocolAddress],
@@ -1000,6 +1000,52 @@ async fn SealedSender_MultiRecipientEncrypt<E: Env>(
     )
     .await?;
     Ok(env.buffer(ctext))
+}
+
+#[no_mangle]
+pub extern "C" fn Java_org_signal_client_internal_Native_SealedSessionCipher_1MultiRecipientEncrypt<
+    'a,
+>(
+    env: jni::JNIEnv<'a>,
+    _class: jni::JClass,
+    recipients: jni::jlongArray,
+    content: jni::ObjectHandle,
+    identity_key_store: jni::JObject<'a>,
+    _ctx: jni::JObject<'a>,
+) -> jni::jbyteArray {
+    jni::run_ffi_safe(&env, || {
+        log::info!("borrowing recipients");
+        let mut recipients = <&[&ProtocolAddress] as jni::ArgTypeInfo>::borrow(&env, recipients)?;
+        log::info!("loading recipients");
+        let recipients: &[&ProtocolAddress] = jni::ArgTypeInfo::load_from(&env, &mut recipients)?;
+
+        log::info!("borrowing content");
+        let mut content =
+            <&UnidentifiedSenderMessageContent as jni::ArgTypeInfo>::borrow(&env, content)?;
+        log::info!("loading content");
+        let content: &UnidentifiedSenderMessageContent =
+            jni::ArgTypeInfo::load_from(&env, &mut content)?;
+
+        log::info!("borrowing store");
+        let mut identity_key_store =
+            <&mut dyn IdentityKeyStore as jni::ArgTypeInfo>::borrow(&env, identity_key_store)?;
+        log::info!("loading store");
+        let identity_key_store: &mut dyn IdentityKeyStore =
+            jni::ArgTypeInfo::load_from(&env, &mut identity_key_store)?;
+
+        log::info!("calling the Rust implementation");
+        let mut rng = rand::rngs::OsRng;
+        let ctext = expect_ready(sealed_sender_multi_recipient_encrypt(
+            recipients,
+            content,
+            identity_key_store,
+            None,
+            &mut rng,
+        ))?;
+
+        log::info!("converting the result");
+        jni::ResultTypeInfo::convert_into(env.buffer(ctext), &env)
+    })
 }
 
 #[bridge_fn_buffer(jni = "SealedSessionCipher_1MultiRecipientMessageForSingleRecipient")]
