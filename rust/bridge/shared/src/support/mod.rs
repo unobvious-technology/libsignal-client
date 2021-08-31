@@ -71,13 +71,15 @@ pub(crate) trait Env {
 ///
 /// [`JsBox`]: https://docs.rs/neon/0.7.1-napi/neon/types/struct.JsBox.html
 macro_rules! bridge_handle {
-    ($typ:ty $(, clone = $_clone:tt)? $(, mut = $_mut:tt)? $(, ffi = $ffi_name:ident)? $(, jni = $jni_name:ident)? $(, node = $node_name:ident)?) => {
+    ($typ:ty $(, clone = $_clone:tt)? $(, mut = $_mut:tt)? $(, ffi = $ffi_name:ident)? $(, jni = $jni_name:ident)? $(, node = $node_name:ident)? $(, wasm = $wasm_name:ident)?) => {
         #[cfg(feature = "ffi")]
         ffi_bridge_handle!($typ $(as $ffi_name)? $(, clone = $_clone)?);
         #[cfg(feature = "jni")]
         jni_bridge_handle!($typ $(as $jni_name)?);
         #[cfg(feature = "node")]
         node_bridge_handle!($typ $(as $node_name)? $(, mut = $_mut)?);
+        #[cfg(feature = "wasm")]
+        wasm_bridge_handle!($typ $(as $wasm_name)? $(, mut = $_mut)?);
     };
 }
 
@@ -105,13 +107,15 @@ macro_rules! bridge_handle {
 /// `bridge_fn`, these parameters are identifiers, not string literals, and there is no way to
 /// disable a particular bridge.
 macro_rules! bridge_deserialize {
-    ($typ:ident::$fn:path $(, ffi = $ffi_name:ident)? $(, jni = $jni_name:ident)? $(, node = $node_name:ident)? ) => {
+    ($typ:ident::$fn:path $(, ffi = $ffi_name:ident)? $(, jni = $jni_name:ident)? $(, node = $node_name:ident)? $(, wasm = $wasm_name:ident)? ) => {
         #[cfg(feature = "ffi")]
         ffi_bridge_deserialize!($typ::$fn $(as $ffi_name)?);
         #[cfg(feature = "jni")]
         jni_bridge_deserialize!($typ::$fn $(as $jni_name)?);
         #[cfg(feature = "node")]
         node_bridge_deserialize!($typ::$fn $(as $node_name)?);
+        #[cfg(feature = "wasm")]
+        wasm_bridge_deserialize!($typ::$fn $(as $wasm_name)?);
     }
 }
 

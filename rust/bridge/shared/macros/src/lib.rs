@@ -150,6 +150,7 @@ use syn_mid::ItemFn;
 mod ffi;
 mod jni;
 mod node;
+mod wasm;
 
 fn value_for_meta_key<'a>(
     meta_values: &'a Punctuated<MetaNameValue, Token![,]>,
@@ -217,16 +218,24 @@ fn bridge_fn_impl(attr: TokenStream, item: TokenStream, result_kind: ResultKind)
         Ok(name) => name,
         Err(error) => return error.to_compile_error().into(),
     };
+    let wasm_name = match name_for_meta_key(&item_names, "wasm", cfg!(feature = "wasm"), || {
+        wasm::name_from_ident(&function.sig.ident)
+    }) {
+        Ok(name) => name,
+        Err(error) => return error.to_compile_error().into(),
+    };
 
     let ffi_feature = ffi_name.as_ref().map(|_| quote!(feature = "ffi"));
     let jni_feature = jni_name.as_ref().map(|_| quote!(feature = "jni"));
     let node_feature = node_name.as_ref().map(|_| quote!(feature = "node"));
-    let maybe_features = [ffi_feature, jni_feature, node_feature];
+    let wasm_feature = wasm_name.as_ref().map(|_| quote!(feature = "wasm"));
+    let maybe_features = [ffi_feature, jni_feature, node_feature, wasm_feature];
     let feature_list = maybe_features.iter().flatten();
 
     let ffi_fn = ffi_name.map(|name| ffi::bridge_fn(name, &function.sig, result_kind));
     let jni_fn = jni_name.map(|name| jni::bridge_fn(name, &function.sig, result_kind));
     let node_fn = node_name.map(|name| node::bridge_fn(name, &function.sig, result_kind));
+    let wasm_fn = wasm_name.map(|name| wasm::bridge_fn(name, &function.sig, result_kind));
 
     quote!(
         #[allow(non_snake_case)]
@@ -238,6 +247,8 @@ fn bridge_fn_impl(attr: TokenStream, item: TokenStream, result_kind: ResultKind)
         #jni_fn
 
         #node_fn
+
+        #wasm_fn
     )
     .into()
 }

@@ -1,0 +1,33 @@
+Add support to bridge/shared for wasm:
+
+  Add rust/bridge/shared/macros/wasm.rs
+  Add rust/bridge/shared/src/wasm/*
+
+  
+
+  rust/bridge/shared/macros/src/lib.rs:
+    213      };
+    214:     let node_name = match name_for_meta_key(&item_names, "node", cfg!(feature = "node"), || {
+    215          node::name_from_ident(&function.sig.ident)
+
+    222      let jni_feature = jni_name.as_ref().map(|_| quote!(feature = "jni"));
+    223:     let node_feature = node_name.as_ref().map(|_| quote!(feature = "node"));
+    224      let maybe_features = [ffi_feature, jni_feature, node_feature];
+
+  rust/bridge/shared/src/lib.rs:
+    8  
+    9: #[cfg(not(any(feature = "ffi", feature = "jni", feature = "node")))]
+    10  compile_error!("Feature \"ffi\", \"jni\", or \"node\" must be enabled for this crate.");
+
+    19  
+    20: #[cfg(feature = "node")]
+    21  #[macro_use]
+
+  rust/bridge/shared/src/support/mod.rs:
+    78          jni_bridge_handle!($typ $(as $jni_name)?);
+    79:         #[cfg(feature = "node")]
+    80          node_bridge_handle!($typ $(as $node_name)? $(, mut = $_mut)?);
+
+    112          jni_bridge_deserialize!($typ::$fn $(as $jni_name)?);
+    113:         #[cfg(feature = "node")]
+    114          node_bridge_deserialize!($typ::$fn $(as $node_name)?);

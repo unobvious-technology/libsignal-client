@@ -25,3 +25,4 @@ unzip3 = "1.0"
 ffi = []
 jni = []
 node = []
+wasm = []

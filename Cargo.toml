@@ -7,6 +7,8 @@ members = [
     "rust/bridge/ffi",
     "rust/bridge/jni",
     "rust/bridge/node",
+    "rust/bridge/wasm",
+    "wasm"
 ]
 default-members = [
     "rust/crypto",
